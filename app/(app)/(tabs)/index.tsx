@@ -5,8 +5,10 @@ import ParallaxScrollView from '@/components/ParallaxScrollView';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { Card } from '@/components/ui/card';
+import { useSession } from '@/hooks/auth/ctx';
 
 export default function HomeScreen() {
+  const { signOut } = useSession();
   return (
     <ParallaxScrollView
       headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
@@ -16,6 +18,15 @@ export default function HomeScreen() {
           style={styles.reactLogo}
         />
       }>
+      <Card className='bg-slate-300'>
+          <Text
+            onPress={() => {signOut()}}
+            className='font-bold text-xl text-red-500 ms-auto me-0'
+          >
+            Logout
+          </Text>
+      </Card>
+
       <ThemedView style={styles.titleContainer}>
         <ThemedText type="title">Welcome!</ThemedText>
         <HelloWave />
