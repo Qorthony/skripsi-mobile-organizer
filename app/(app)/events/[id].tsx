@@ -82,7 +82,7 @@ export default function DetailEvent() {
 
                 <AbsoluteBottomView>
                     <HStack className='justify-around'>
-                        <Button size='md' variant='outline'>
+                        <Button size='md' variant='outline' onPress={() => router.push(`/events/${id}/attendances`)}>
                             <ButtonText>Daftar Kehadiran</ButtonText>
                         </Button>
                         <Button size='md' onPress={() => router.push(`/events/${id}/scan`)}>
