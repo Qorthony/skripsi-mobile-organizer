@@ -85,7 +85,7 @@ export default function DetailEvent() {
                         <Button size='md' variant='outline'>
                             <ButtonText>Daftar Kehadiran</ButtonText>
                         </Button>
-                        <Button size='md'>
+                        <Button size='md' onPress={() => router.push(`/events/${id}/scan`)}>
                             <ButtonText>Pindai Tiket</ButtonText>
                         </Button>
                     </HStack>
