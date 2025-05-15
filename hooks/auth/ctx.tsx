@@ -1,9 +1,15 @@
 import { useContext, createContext, type PropsWithChildren, useState } from 'react';
 import { useStorageState } from '../useStorageState';
+import BackendRequest from '@/services/Request';
 
 type User = {
   email: string;
   name: string;
+  organizer?: {
+    id: number;
+    nama: string;
+    logo?: string;
+  }
 };
 
 const AuthContext = createContext<{
@@ -46,7 +52,20 @@ export function SessionProvider({ children }: PropsWithChildren) {
           setSession(token);
         },
         signOut: () => {
-          setSession(null);
+          // Panggil endpoint logout
+          BackendRequest({
+            endpoint: '/logout',
+            method: 'POST',
+            token: session,
+            onComplete: () => {
+              setSession(null);
+              setUser(null);
+            },
+            onError: () => {
+              setSession(null);
+              setUser(null);
+            }
+          });
         },
         user,
         setUser,

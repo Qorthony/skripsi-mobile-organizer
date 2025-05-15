@@ -10,7 +10,7 @@ import BackendRequest from '@/services/Request'
 import { Spinner } from '@/components/ui/spinner'
 
 export default function VerifyOTP() {
-    const { signIn, user } = useSession();
+    const { signIn, user, setUser } = useSession();
     const [otp, setOtp] = useState('');
     const [loading, setLoading] = useState(false);
     const [resendLoading, setResendLoading] = useState(false);
@@ -39,6 +39,7 @@ export default function VerifyOTP() {
             onSuccess: (data) => {
                 console.log('OTP verification successful', data);
                 signIn(data.token || null);
+                setUser(data.user);
                 router.replace('/');
             },
             onError: (error) => {

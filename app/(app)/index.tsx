@@ -4,11 +4,11 @@ import { useSession } from '@/hooks/auth/ctx';
 import BackendRequest from '@/services/Request';
 import { Spinner } from '@/components/ui/spinner';
 import { router } from 'expo-router';
-import { FlatList, Pressable, Text, View } from 'react-native';
+import { FlatList, Pressable, Text, View, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function HomeScreen() {
-  const { signOut, session } = useSession();
+  const { signOut, session, user } = useSession();
   const [events, setEvents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -35,17 +35,30 @@ export default function HomeScreen() {
   return (
     <View className='flex-1 bg-white'>
       <SafeAreaView className='px-2 mb-16'>
-        <View className='py-4'>
+        <View className='py-4 flex-row items-center justify-between'>
+          <View className='flex-row items-center'>
+            <View className='w-10 h-10 rounded-full bg-slate-300 justify-center items-center mr-2 overflow-hidden'>
+              {/* Logo organizer, fallback inisial jika tidak ada logo */}
+              {user?.organizer?.logo ? (
+                <Image source={{ uri: user.organizer.logo }} style={{ width: 40, height: 40, borderRadius: 20 }} />
+              ) : (
+                <Text className='text-lg font-bold text-slate-700'>
+                  {user?.organizer?.nama ? user.organizer.nama.charAt(0).toUpperCase() : user?.name ? user.name.charAt(0).toUpperCase() : '?'}
+                </Text>
+              )}
+            </View>
+            <Text className='font-bold text-lg'>{user?.organizer?.nama || user?.name || 'Organizer'}</Text>
+          </View>
           <Text
             onPress={signOut}
             className='font-bold text-xl text-red-500 ms-auto me-0'
           >
             Logout
           </Text>
-          <Text className='font-bold text-xl'>
-            Events Saya
-          </Text>
         </View>
+        <Text className='font-bold text-xl'>
+          Events Saya
+        </Text>
         {loading ? (
           <Spinner />
         ) : (
