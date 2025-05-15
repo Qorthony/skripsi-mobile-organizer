@@ -23,36 +23,63 @@ export default function Attendances() {
     const [participants, setParticipants] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
+    const [search, setSearch] = useState('');
+    const [event, setEvent] = useState<any>(null);
 
-    const fetchParticipants = () => {
+    const fetchParticipants = (searchValue = '') => {
         setRefreshing(true);
         BackendRequest({
-            endpoint: `/organizer/events/${id}/participants`,
+            endpoint: `/organizer/events/${id}/participants${searchValue ? `?search=${encodeURIComponent(searchValue)}` : ''}`,
             method: 'GET',
             token: session,
-            onSuccess: (data) => setParticipants(data.data || []),
-            onError: () => setParticipants([]),
+            onSuccess: (data) => {
+                setParticipants(data.data?.participants || []);
+                setEvent(data.data?.event || null);
+            },
+            onError: () => {
+                setParticipants([]);
+                setEvent(null);
+            },
             onComplete: () => setRefreshing(false),
         });
     };
 
     useEffect(() => {
+        setLoading(true);
         BackendRequest({
             endpoint: `/organizer/events/${id}/participants`,
             method: 'GET',
             token: session,
-            onSuccess: (data) => setParticipants(data.data || []),
-            onError: () => setParticipants([]),
+            onSuccess: (data) => {
+                setParticipants(data.data?.participants || []);
+                setEvent(data.data?.event || null);
+            },
+            onError: () => {
+                setParticipants([]);
+                setEvent(null);
+            },
             onComplete: () => setLoading(false),
         });
     }, [id, session]);
 
+    // Trigger search on input change (debounced)
+    React.useEffect(() => {
+        const timeout = setTimeout(() => {
+            if (search.trim() !== '') {
+                fetchParticipants(search.trim());
+            } else {
+                fetchParticipants('');
+            }
+        }, 400);
+        return () => clearTimeout(timeout);
+    }, [search]);
+
     return (
         <SafeAreaView className='flex-1 bg-white'>
             <View className='mx-4'>
-                <Text className='mb-4 text-xl font-semibold'>Nama Event</Text>
+                <Text className='mb-4 text-xl font-semibold'>{event?.nama || 'Nama Event'}</Text>
                 <Input variant='rounded' size='md'>
-                    <InputField placeholder='Nama Peserta'/>
+                    <InputField placeholder='Cari nama/email peserta' value={search} onChangeText={setSearch}/>
                     <InputIcon as={SearchIcon} size='md' className='me-2' />
                 </Input>
             </View>
@@ -62,7 +89,7 @@ export default function Attendances() {
                 data={participants}
                 keyExtractor={(item, index) => item.id?.toString() || index.toString()}
                 refreshing={refreshing}
-                onRefresh={fetchParticipants}
+                onRefresh={() => fetchParticipants(search.trim())}
                 ListEmptyComponent={loading ? (
                     <Text className='text-center mt-8'>Memuat data peserta...</Text>
                 ) : (
@@ -73,7 +100,7 @@ export default function Attendances() {
                         <HStack className='justify-between items-center'>
                             <View>
                                 <Text className='text-lg font-medium'>{item.user?.name}</Text>
-                                <Text className='text-sm text-gray-500'>{item.user?.email}</Text>
+                                <Text className='text-sm text-gray-500'>{item.user?.email || item.email_penerima}</Text>
                             </View>
                             <Badge action={badgeColor[item.status] || 'muted'}>
                                 <BadgeText>{item.status}</BadgeText>
