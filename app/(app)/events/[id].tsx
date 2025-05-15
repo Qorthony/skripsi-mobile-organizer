@@ -6,6 +6,9 @@ import dayjs from 'dayjs';
 import AbsoluteBottomView from '@/components/AbsoluteBottomView';
 import { HStack } from '@/components/ui/hstack';
 import { Button, ButtonText } from '@/components/ui/button';
+import { useSession } from '@/hooks/auth/ctx';
+import BackendRequest from '@/services/Request';
+import { Spinner } from '@/components/ui/spinner';
 
 type selectedTicket = {
     id: number;
@@ -16,74 +19,91 @@ type selectedTicket = {
 
 export default function DetailEvent() {
     const { id } = useLocalSearchParams();
-    const EVENTS_DETAIL = EVENTS_DATA.find(event => event.id === Number(id));
+    const { session } = useSession();
+    const [eventDetail, setEventDetail] = useState<any>(null);
+    const [loading, setLoading] = useState(true);
+    const [tab, setTab] = useState<'deskripsi'|'tiket'>('deskripsi');
+    const [refreshing, setRefreshing] = useState(false);
 
-    const [activeTab, setActiveTab] = useState('deskripsi');
-    const activeTabClassName = 'border-b-2 border-purple-600';
-
-    const [selected, setSelected] = useState<selectedTicket[]>([]);
+    const fetchEventDetail = () => {
+        setRefreshing(true);
+        BackendRequest({
+            endpoint: `/organizer/events/${id}`,
+            method: 'GET',
+            token: session,
+            onSuccess: (data) => setEventDetail(data.data),
+            onComplete: () => setRefreshing(false),
+        });
+    };
 
     useEffect(() => {
-        console.log(id);
-    }, [id]);
+        setLoading(true);
+        BackendRequest({
+            endpoint: `/organizer/events/${id}`,
+            method: 'GET',
+            token: session,
+            onSuccess: (data) => setEventDetail(data.data),
+            onComplete: () => setLoading(false),
+        });
+    }, [id, session]);
 
+    if (loading) return <Spinner />;
 
+    const activeTabClassName = 'border-b-2 border-purple-600';
 
     return (
         <SafeAreaView className='flex-1 bg-white'>
             <View className='flex-1 bg-white'>
                 <Image
-                    source={EVENTS_DETAIL?.image}
+                    source={eventDetail?.poster_url ? { uri: eventDetail.poster_url } : require('@/assets/images/dummy_poster.png')}
                     className='w-full h-48 rounded-lg'
                 />
                 <View className='px-4 py-2'>
-                    <Text className='text-xl font-bold'>{EVENTS_DETAIL?.name}</Text>
-                    <Text className='text-sm text-gray-600'>{dayjs(EVENTS_DETAIL?.date).format('DD MMMM YYYY')}</Text>
+                    <Text className='text-xl font-bold'>{eventDetail?.nama}</Text>
+                    <Text className='text-sm text-gray-600'>{dayjs(eventDetail?.tanggal_mulai).format('DD MMMM YYYY')}</Text>
                     {
-                        EVENTS_DETAIL?.location === 'online' ?
-                            <Text className='text-sm text-gray-600'>{EVENTS_DETAIL?.location}</Text> :
-                            <Text className='text-sm text-gray-600'>{EVENTS_DETAIL?.city}</Text>
+                        eventDetail?.lokasi === 'online' ?
+                            <Text className='text-sm text-gray-600'>Online</Text> :
+                            <Text className='text-sm text-gray-600'>{eventDetail?.kota}</Text>
                     }
                 </View>
 
                 <View className='bg-gray-100 d-flex justify-around flex-row'>
-                    <Pressable
-                        className={`flex-grow py-3 ${activeTab === 'deskripsi' ? activeTabClassName : ''}`}
-                        onPress={() => setActiveTab('deskripsi')}
-                    >
+                    <Pressable className={`flex-grow py-3 ${tab === 'deskripsi' ? activeTabClassName : ''}`} onPress={() => setTab('deskripsi')}>
                         <Text className='text-center'>Deskripsi</Text>
                     </Pressable>
-                    <Pressable
-                        className={`flex-grow py-3 ${activeTab === 'tiket' ? activeTabClassName : ''}`}
-                        onPress={() => setActiveTab('tiket')}
-                    >
+                    <Pressable className={`flex-grow py-3 ${tab === 'tiket' ? activeTabClassName : ''}`} onPress={() => setTab('tiket')}>
                         <Text className='text-center'>Tiket</Text>
                     </Pressable>
                 </View>
                 <View className='flex-1 p-4'>
-                    {
-                        activeTab === 'deskripsi' ?
-                            <Text>{EVENTS_DETAIL?.description}</Text> :
-                            <FlatList
-                                className='mb-16'
-                                showsVerticalScrollIndicator={false}
-                                data={EVENTS_DETAIL?.tickets}
-                                renderItem={({ item }) => (
-                                    <TicketCard
-                                        selected={selected}
-                                        setSelected={setSelected} 
-                                        {...item} 
-                                    />
-                                )}
-                                keyExtractor={item => item.id.toString()}
-                            />
-                    }
+                    {tab === 'deskripsi' && (
+                        <Text>{eventDetail?.deskripsi}</Text>
+                    )}
+                    {tab === 'tiket' && (
+                        <FlatList
+                            data={eventDetail?.tickets || []}
+                            keyExtractor={item => item.id}
+                            renderItem={({ item }) => (
+                                <View className='bg-slate-200 rounded-lg p-2 my-2'>
+                                    <Text className='font-bold'>{item.nama}</Text>
+                                    <Text className='text-sm'>Rp. {item.harga}</Text>
+                                    <Text className='text-sm text-gray-600'>{item.keterangan ?? '-'}</Text>
+                                    <Text className='text-xs text-gray-500'>Kuota: {item.kuota}</Text>
+                                    <Text className='text-xs text-gray-500'>Buka: {dayjs(item.waktu_buka).format('DD MMM YYYY HH:mm')}</Text>
+                                    <Text className='text-xs text-gray-500'>Tutup: {dayjs(item.waktu_tutup).format('DD MMM YYYY HH:mm')}</Text>
+                                </View>
+                            )}
+                            refreshing={refreshing}
+                            onRefresh={fetchEventDetail}
+                        />
+                    )}
                 </View>
 
                 <AbsoluteBottomView>
                     <HStack className='justify-around'>
                         <Button size='md' variant='outline' onPress={() => router.push(`/events/${id}/attendances`)}>
-                            <ButtonText>Daftar Kehadiran</ButtonText>
+                            <ButtonText>Daftar Peserta</ButtonText>
                         </Button>
                         <Button size='md' onPress={() => router.push(`/events/${id}/scan`)}>
                             <ButtonText>Pindai Tiket</ButtonText>
