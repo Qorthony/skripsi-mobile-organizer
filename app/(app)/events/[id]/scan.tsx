@@ -4,7 +4,7 @@ import { HStack } from '@/components/ui/hstack';
 import { Button, ButtonText } from '@/components/ui/button';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Badge, BadgeText } from '@/components/ui/badge';
-import { useLocalSearchParams } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import NfcManager, { NfcTech, Ndef, NfcEvents, TagEvent } from 'react-native-nfc-manager';
 import BackendRequest from '@/services/Request';
@@ -12,6 +12,7 @@ import { useSession } from '@/hooks/auth/ctx';
 import ErrorService from '@/services/ErrorService';
 import ScanAnimation from '@/components/ScanAnimation';
 import ParticipantInfo from '@/components/ParticipantInfo';
+import * as IntentLauncher from 'expo-intent-launcher';
 
 export default function ScanNfcTicket() {
     const { id } = useLocalSearchParams();
@@ -22,6 +23,7 @@ export default function ScanNfcTicket() {
     const [scanStatus, setScanStatus] = useState<'waiting' | 'success' | 'error'>('waiting');
     const [statusMessage, setStatusMessage] = useState<string>('Tempelkan tiket untuk checkin');
     const [lastScannedParticipant, setLastScannedParticipant] = useState<any>(null);
+    const [nfcNotEnabled, setNfcNotEnabled] = useState(false);
     
     // Fetch event details to display the name
     useEffect(() => {
@@ -49,8 +51,18 @@ export default function ScanNfcTicket() {
                 setIsNfcSupported(supported);
                 
                 if (supported) {
+                    console.log('Device supports NFC');
+                    
                     // Start NFC manager
                     await NfcManager.start();
+                    const enabled = await NfcManager.isEnabled();
+                    if (!enabled) {
+                        console.log('NFC is not enabled');
+                        setNfcNotEnabled(true);
+                        return;
+                    }
+                    console.log('NFC is enabled');
+                    
                     startNfcScan();
                 } else {
                     Alert.alert('NFC Not Supported', 'This device does not support NFC.');
@@ -86,7 +98,11 @@ export default function ScanNfcTicket() {
 
       // Function to start NFC scanning
     const startNfcScan = async () => {
+        console.log('Starting NFC scan..., '+isNfcSupported );
+        
         if (!isNfcSupported) return;
+        console.log('Device supports NFC, starting scan...');
+        
         
         try {
             setIsScanning(true);
@@ -134,6 +150,8 @@ export default function ScanNfcTicket() {
                         payload = Ndef.text.decodePayload(Uint8Array.from(record.payload));
                     }
                     
+                    console.log('Payload:', payload);
+                    
                     // Check if payload contains ticket code (format: "TICKET:123456")
                     if (payload && typeof payload === 'string' && payload.startsWith('TICKET:')) {
                         kodeTiket = payload.substring(7); // Extract code after "TICKET:"
@@ -156,6 +174,7 @@ export default function ScanNfcTicket() {
     
     // Process the scanned tag
     const processTag = async (tag: TagEvent) => {
+        console.log('Tag detected:', tag);
         try {
             // Trigger light haptic feedback when tag is detected
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -226,6 +245,18 @@ export default function ScanNfcTicket() {
         startNfcScan();
     };
     
+    // Add function to open NFC settings
+    const openNfcSettings = () => {
+        if (Platform.OS === 'android') {
+            IntentLauncher.startActivityAsync(IntentLauncher.ActivityAction.NFC_SETTINGS);
+        } else {
+            Alert.alert(
+                'Info',
+                'Silakan buka Pengaturan > NFC secara manual di perangkat Anda.'
+            );
+        }
+    };
+    
     if (!isNfcSupported) {
         return (
             <SafeAreaView className='flex-1 bg-slate-100'>
@@ -236,6 +267,25 @@ export default function ScanNfcTicket() {
             </SafeAreaView>
         );
     }
+    
+    // Add UI for NFC not enabled
+    if (nfcNotEnabled) {
+        return (
+            <SafeAreaView className='flex-1 bg-slate-100'>
+                <View className='flex-1 items-center justify-center'>
+                    <Text className='text-xl font-bold text-yellow-600'>NFC belum aktif</Text>
+                    <Text className='text-center mt-2 px-6'>Silakan aktifkan NFC di pengaturan perangkat Anda untuk menggunakan fitur ini.</Text>
+                    <Button className='mt-8' onPress={openNfcSettings}>
+                        <ButtonText>Buka Pengaturan NFC</ButtonText>
+                    </Button>
+                    <Button className='mt-2' variant='outline' onPress={() => router.back()}>
+                        <ButtonText>Kembali</ButtonText>
+                    </Button>
+                </View>
+            </SafeAreaView>
+        );
+    }
+    
       return (
         <SafeAreaView className='flex-1 bg-slate-100'>
             <View className='flex-1 items-center pt-10'>

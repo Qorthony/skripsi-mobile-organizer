@@ -10,6 +10,7 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
+      "bundleIdentifier": "com.qorthony.skripsiorganizer",
       "infoPlist": {
         "NFCReaderUsageDescription": "Aplikasi ini menggunakan NFC untuk membaca dan memindai tiket event",
         "com.apple.developer.nfc.readersession.formats": [
@@ -22,6 +23,7 @@
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
+      "package": "com.qorthony.skripsiorganizer",
       "permissions": [
         "android.permission.NFC"
       ]
@@ -48,6 +50,13 @@
     ],
     "experiments": {
       "typedRoutes": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "93729634-5cc7-4b03-9030-41c84c7e84cb"
+      }
+    },
+    "owner": "qorthony"
   }
 }

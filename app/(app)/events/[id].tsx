@@ -1,4 +1,4 @@
-import { View, Text, SafeAreaView, Image, Pressable, FlatList } from 'react-native'
+import { View, Text, Image, Pressable, FlatList } from 'react-native'
 import React, { useEffect, useState } from 'react'
 import { router, useLocalSearchParams } from 'expo-router'
 import { EVENTS_DATA, TicketTypes } from '@/constants/events-data';
@@ -9,6 +9,7 @@ import { Button, ButtonText } from '@/components/ui/button';
 import { useSession } from '@/hooks/auth/ctx';
 import BackendRequest from '@/services/Request';
 import { Spinner } from '@/components/ui/spinner';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 type selectedTicket = {
     id: number;
