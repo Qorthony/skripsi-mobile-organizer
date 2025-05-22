@@ -29,23 +29,19 @@ export default function DetailEvent() {
     const fetchEventDetail = () => {
         setRefreshing(true);
         BackendRequest({
-            endpoint: `/organizer/events/${id}`,
+            endpoint: `/events/${id}`,
             method: 'GET',
             token: session,
             onSuccess: (data) => setEventDetail(data.data),
-            onComplete: () => setRefreshing(false),
+            onComplete: () => {
+                setRefreshing(false)
+                setLoading(false);
+            },
         });
     };
 
     useEffect(() => {
-        setLoading(true);
-        BackendRequest({
-            endpoint: `/organizer/events/${id}`,
-            method: 'GET',
-            token: session,
-            onSuccess: (data) => setEventDetail(data.data),
-            onComplete: () => setLoading(false),
-        });
+        fetchEventDetail();
     }, [id, session]);
 
     if (loading) return <Spinner />;
@@ -109,38 +105,12 @@ export default function DetailEvent() {
                         <Button size='md' onPress={() => router.push(`/events/${id}/scan`)}>
                             <ButtonText>Pindai Tiket</ButtonText>
                         </Button>
+                        <Button size='md' variant='outline' onPress={() => router.push(`/events/${id}/transactions`)}>
+                            <ButtonText>Transaksi</ButtonText>
+                        </Button>
                     </HStack>
                 </AbsoluteBottomView>
             </View>
         </SafeAreaView>
-    )
-}
-
-interface TicketCardProps {
-    id: number;
-    type: string;
-    price: number;
-    description: string;
-    selected: selectedTicket[];
-    setSelected: (value: any) => void;
-}
-
-function TicketCard({
-    id, 
-    type, 
-    price, 
-    description,
-    selected,
-    setSelected
-}: TicketCardProps) {
-    
-    return (
-        <View className='bg-slate-200 rounded-lg p-2 my-2'>
-            <View>
-                <Text className='font-bold'>{type}</Text>
-                <Text className='text-sm'>Rp. {price}</Text>
-                <Text className='text-sm text-gray-600'>{description}</Text>
-            </View>
-        </View>
     )
 }

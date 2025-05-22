@@ -48,6 +48,8 @@ export default function RootLayout() {
           <Stack.Screen name="events/[id]" options={{ title:'Detail Event' }} />
           <Stack.Screen name="events/[id]/scan" options={{ title:'Scan Ticket' }} />
           <Stack.Screen name="events/[id]/attendances" options={{ title:'Peserta Event' }} />
+          <Stack.Screen name="events/[id]/transactions" options={{ title:'Transaksi Event' }} />
+          <Stack.Screen name="transactions/[transactionId]" options={{ title:'Detail transaksi' }} />
           <Stack.Screen name="+not-found" />
         </Stack>
   );
