@@ -24,6 +24,7 @@ export default function ScanNfcTicket() {
     const [statusMessage, setStatusMessage] = useState<string>('Tempelkan tiket untuk checkin');
     const [lastScannedParticipant, setLastScannedParticipant] = useState<any>(null);
     const [nfcNotEnabled, setNfcNotEnabled] = useState(false);
+    const [hceResponse, setHceResponse] = useState<string | null>(null);
     
     // Fetch event details to display the name
     useEffect(() => {
@@ -89,6 +90,8 @@ export default function ScanNfcTicket() {
             try {
                 NfcManager.setEventListener(NfcEvents.DiscoverTag, null);
                 NfcManager.unregisterTagEvent();
+                // stop the nfc scanning
+                // NfcManager.cancelTechnologyRequest();
             } catch (error) {
                 console.error('Error cleaning up NFC:', error);
             }
@@ -98,9 +101,9 @@ export default function ScanNfcTicket() {
 
       // Function to start NFC scanning
     const startNfcScan = async () => {
-        console.log('Starting NFC scan..., '+isNfcSupported );
+        console.log('Starting NFC scan..., '+eventName+' is not enabled?' +nfcNotEnabled );
         
-        if (!isNfcSupported) return;
+        if (nfcNotEnabled) return;
         console.log('Device supports NFC, starting scan...');
         
         
@@ -126,8 +129,16 @@ export default function ScanNfcTicket() {
                     processTag(tag);
                 }
             });
+
+            // // register for the NFC tag with NDEF in it
+            // await NfcManager.requestTechnology(NfcTech.Ndef);
+            // // the resolved tag object will contain `ndefMessage` property
+            // const tag = await NfcManager.getTag();
+            // console.warn('Tag found', tag);
         } catch (error) {
             console.error('Error starting NFC scan:', error);
+            // stop the nfc scanning
+            // NfcManager.cancelTechnologyRequest();
             setIsScanning(false);
             setScanStatus('error');
             setStatusMessage('Error memulai pemindaian. Coba lagi.');
@@ -140,7 +151,10 @@ export default function ScanNfcTicket() {
             let kodeTiket = null;
             
             // First, try to read NDEF message
+            console.log('message:', tag.ndefMessage);
+            
             if (tag.ndefMessage && tag.ndefMessage.length > 0) {
+                
                 for (const record of tag.ndefMessage) {
                     // Make sure we handle both string and Uint8Array payloads
                     let payload;
@@ -176,29 +190,51 @@ export default function ScanNfcTicket() {
     const processTag = async (tag: TagEvent) => {
         console.log('Tag detected:', tag);
         try {
-            // Trigger light haptic feedback when tag is detected
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-            
-            // Extract ticket code from tag
-            const kodeTiket = parseKodeTiket(tag);
-            
-            if (!kodeTiket) {
-                // Trigger error haptic feedback
+            // Cek apakah ada NDEF message
+            if (tag.ndefMessage && tag.ndefMessage.length > 0) {
+                // Mode NDEF (seperti sebelumnya)
+                const kodeTiket = parseKodeTiket(tag);
+                if (!kodeTiket) {
+                    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+                    setScanStatus('error');
+                    setStatusMessage('Tiket tidak valid');
+                    setTimeout(startNfcScan, 3000);
+                    return;
+                }
+                await checkInTicket(kodeTiket);
+            } else if (tag.techTypes && tag.techTypes.includes('android.nfc.tech.IsoDep')) {
+                // Mode HCE/IsoDep
+                setScanStatus('waiting');
+                setStatusMessage('Membaca kartu HCE...');
+                try {
+                    await NfcManager.requestTechnology(NfcTech.IsoDep);
+                    // Contoh APDU SELECT AID (ganti sesuai kebutuhan HCE kamu)
+                    const selectAid = [0x00, 0xA4, 0x04, 0x00, 0x07, 0xF0, 0x12, 0x34, 0x56, 0x78, 0x90, 0x00];
+                    const response = await NfcManager.transceive(selectAid);
+                    const responseHex = Array.isArray(response)
+                        ? response.map((b: number) => b.toString(16).padStart(2, '0')).join(' ')
+                        : response;
+                    setHceResponse(responseHex);
+                    setScanStatus('success');
+                    setStatusMessage('HCE Response: ' + responseHex);
+                } catch (err) {
+                    setScanStatus('error');
+                    setStatusMessage('Gagal membaca kartu HCE');
+                } finally {
+                    NfcManager.cancelTechnologyRequest();
+                }
+            } else {
                 Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
                 setScanStatus('error');
-                setStatusMessage('Tiket tidak valid');
+                setStatusMessage('Tag tidak dikenali (bukan NDEF/HCE)');
                 setTimeout(startNfcScan, 3000);
-                return;
             }
-            
-            // Call check-in API
-            await checkInTicket(kodeTiket);
         } catch (error) {
-            // Trigger error haptic feedback
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
             console.error('Error processing tag:', error);
             setScanStatus('error');
-            setStatusMessage('Gagal membaca tiket');
+            setStatusMessage('Gagal membaca tag');
             setTimeout(startNfcScan, 3000);
         }
     };    
@@ -302,6 +338,9 @@ export default function ScanNfcTicket() {
                     <Text className={`mt-2 text-center px-6 text-${scanStatus === 'success' ? 'green' : scanStatus === 'error' ? 'red' : 'gray'}-600 font-medium text-lg`}>
                         {statusMessage}
                     </Text>
+                    {hceResponse && (
+                        <Text className='mt-2 text-xs text-gray-500 break-all'>HCE Response: {hceResponse}</Text>
+                    )}
                 </View>
                 
                 {/* Show participant info when scan is successful */}
