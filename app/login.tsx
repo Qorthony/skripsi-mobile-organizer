@@ -8,7 +8,7 @@ import { useSession } from '@/hooks/auth/ctx';
 import BackendRequest from '@/services/Request';
 import { Link, Redirect, router } from 'expo-router';
 import { useState } from 'react';
-import { Text, View } from 'react-native';
+import { Text, ToastAndroid, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 
@@ -44,6 +44,10 @@ export default function SignIn() {
             },
             onError: (error) => {
                 console.error('Request failed', error);
+                ToastAndroid.show(
+                    error?.message || 'Login failed',
+                    ToastAndroid.SHORT
+                );
             },
             onComplete: () => {
                 setLoading(false);
