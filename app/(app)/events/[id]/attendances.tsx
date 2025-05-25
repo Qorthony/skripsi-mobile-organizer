@@ -14,9 +14,9 @@ import { useLocalSearchParams } from 'expo-router'
 
 export default function Attendances() {
     const badgeColor: { [key: string]: 'muted' | 'success' | 'error' | 'warning' | 'info' } = {
-        'registered': 'muted',
-        'checked-in': 'success',
-        'cancelled': 'error'
+        'inactive': 'warning',
+        'checkin': 'success',
+        'active': 'info'
     };
     const { session } = useSession();
     const { id } = useLocalSearchParams();
@@ -25,6 +25,10 @@ export default function Attendances() {
     const [refreshing, setRefreshing] = useState(false);
     const [search, setSearch] = useState('');
     const [event, setEvent] = useState<any>(null);
+    const [stats, setStats] = useState({
+        total_peserta: 0,
+        total_checkin: 0,
+    });
 
     const fetchParticipants = (searchValue = '') => {
         setRefreshing(true);
@@ -35,6 +39,10 @@ export default function Attendances() {
             onSuccess: (data) => {
                 setParticipants(data.data?.participants || []);
                 setEvent(data.data?.event || null);
+                setStats({
+                    total_peserta: data.data?.stats?.total_peserta || 0,
+                    total_checkin: data.data?.stats?.total_checkin || 0,
+                });
             },
             onError: () => {
                 setParticipants([]);
@@ -77,10 +85,15 @@ export default function Attendances() {
     return (
         <SafeAreaView className='flex-1 bg-white'>
             <View className='mx-4'>
-                <Text className='mb-4 text-xl font-semibold'>{event?.nama || 'Nama Event'}</Text>
+                <Text className='mb-2 text-xl font-semibold'>{event?.nama || 'Nama Event'}</Text>
+                <View className='flex-row items-baseline justify-start gap-2 mb-3'>
+                    <Text className='text-sm text-gray-500'>Total Peserta: <Text className='text-sky-600 font-bold'>{stats.total_peserta}</Text></Text>
+                    <Text className='text-sm text-gray-500'>Total Check-in: <Text className='text-sky-600 font-bold'>{stats.total_checkin}</Text></Text>
+                </View>
+                <Text className='font-semibold mb-2'>Cari peserta berdasarkan nama atau email.</Text>
                 <Input variant='rounded' size='md'>
                     <InputField placeholder='Cari nama/email peserta' value={search} onChangeText={setSearch}/>
-                    <InputIcon as={SearchIcon} size='md' className='me-2' />
+                    {/* <InputIcon as={SearchIcon} size='md' className='me-2' /> */}
                 </Input>
             </View>
             <Divider className='mt-4' />

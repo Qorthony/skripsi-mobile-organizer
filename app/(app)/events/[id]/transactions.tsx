@@ -4,6 +4,7 @@ import { useLocalSearchParams, router } from 'expo-router';
 import BackendRequest from '@/services/Request';
 import { useSession } from '@/hooks/auth/ctx';
 import { Card } from '@/components/ui/card';
+import { rupiahFormat } from '@/helpers/currency';
 
 type Transaction = {
     id: string;
@@ -14,6 +15,7 @@ type Transaction = {
     total_harga: number;
     status: string;
     created_at: string;
+    jumlah_tiket: number;
 };
 
 export default function EventTransactions() {
@@ -21,6 +23,10 @@ export default function EventTransactions() {
     const { session } = useSession();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [eventName, setEventName] = useState('');
+  const [stats, setStats] = useState({
+    total_penghasilan: 0,
+    total_tiket_terjual: 0,
+  })
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -31,6 +37,10 @@ export default function EventTransactions() {
       onSuccess: (data) => {
         setTransactions(data.data.transactions || []);
         setEventName(data.data.event?.nama || '');
+        setStats({
+          total_penghasilan: data.data.stats.total_penghasilan || 0,
+          total_tiket_terjual: data.data.stats.total_tiket_terjual || 0,
+        });
         setLoading(false);
       },
       onError: () => setLoading(false),
@@ -47,8 +57,9 @@ export default function EventTransactions() {
   return (
     <View className="flex-1 bg-slate-50">
       <View className="px-5 py-4 bg-white border-b border-slate-200">
-        <Text className="font-bold text-2xl text-slate-800">Transaksi Event</Text>
-        <Text className="text-base text-slate-500 mt-1">{eventName}</Text>
+        <Text className="font-bold text-2xl text-slate-800">{eventName}</Text>
+        <Text className="text-slate-600">Total Penghasilan: <Text className="text-sky-600 font-bold">{rupiahFormat(stats.total_penghasilan) }</Text></Text>
+        <Text className="text-slate-600">Total Tiket Terjual: <Text className="text-sky-600 font-bold">{stats.total_tiket_terjual}</Text></Text>
       </View>
       <FlatList
         data={transactions}
@@ -68,7 +79,8 @@ export default function EventTransactions() {
                 <Text className={`text-xs font-bold ${item.status === 'success' ? 'text-green-600' : item.status === 'pending' ? 'text-yellow-500' : 'text-red-500'}`}>{item.status.toUpperCase()}</Text>
                 <Text className="text-xs text-slate-400">{new Date(item.created_at).toLocaleString()}</Text>
                 <View className="flex-row items-center mt-2">
-                <Text className="text-sky-600 font-bold text-base">Rp{item.total_harga?.toLocaleString()}</Text>
+                  <Text className="text-slate-600 text-sm">{item.jumlah_tiket} Tiket - </Text>
+                  <Text className="text-sky-600 font-bold text-base">Rp{item.total_harga?.toLocaleString()}</Text>
                 </View>
             </Card>
           </TouchableOpacity>

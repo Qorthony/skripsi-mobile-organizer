@@ -13,6 +13,7 @@ export interface EventTypes {
     location: string;
     city?: string|null;
     event_link?: string|null;
+    status?: 'draft' | 'in_review' | 'published';
     tickets: TicketTypes[];
 }
 

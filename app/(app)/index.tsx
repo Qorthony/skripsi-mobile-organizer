@@ -78,6 +78,7 @@ export default function HomeScreen() {
                 location: item.lokasi,
                 city: item.kota,
                 tickets: item.tickets, // jika ada
+                status: item.status
               };
               return (
                 <Pressable onPress={() => router.push(`/events/${item.id}`)}>
