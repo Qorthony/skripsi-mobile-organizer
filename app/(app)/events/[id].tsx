@@ -52,7 +52,7 @@ export default function DetailEvent() {
         <SafeAreaView className='flex-1 bg-white'>
             <View className='flex-1 bg-white'>
                 <Image
-                    source={eventDetail?.poster_url ? { uri: eventDetail.poster_url } : require('@/assets/images/dummy_poster.png')}
+                    source={eventDetail?.poster ? { uri: eventDetail.poster } : require('@/assets/images/dummy_poster.png')}
                     className='w-full h-48 rounded-lg'
                 />
                 <View className='px-4 py-2'>

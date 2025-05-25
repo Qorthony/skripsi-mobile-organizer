@@ -74,7 +74,7 @@ export default function HomeScreen() {
                 name: item.nama,
                 description: item.deskripsi,
                 date: item.tanggal_mulai,
-                image: item.poster_url,
+                image: item.poster,
                 location: item.lokasi,
                 city: item.kota,
                 tickets: item.tickets, // jika ada
