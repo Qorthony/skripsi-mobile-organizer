@@ -7,18 +7,18 @@ export default () => {
   let slug = 'skripsi-organizer';
   let androidPackage = 'com.qorthony.skripsiorganizer';
   let iosBundle = 'com.qorthony.skripsiorganizer';
-  let scheme = 'myapp';
+  let scheme = 'skripsiorganizer';
 
   if (IS_DEV) {
     name = 'skripsi-organizer Dev';
     androidPackage = 'com.qorthony.skripsiorganizer.dev';
     iosBundle = 'com.qorthony.skripsiorganizer.dev';
-    scheme = 'myappdev';
+    scheme = 'skripsiorganizer';
   } else if (IS_STAGING) {
-    name = 'skripsi-organizer Staging';
-    androidPackage = 'com.qorthony.skripsiorganizer.staging';
-    iosBundle = 'com.qorthony.skripsiorganizer.staging';
-    scheme = 'myappstaging';
+    name = 'skripsi-organizer (Preview)';
+    androidPackage = 'com.qorthony.skripsiorganizer.preview';
+    iosBundle = 'com.qorthony.skripsiorganizer.preview';
+    scheme = 'skripsiorganizer';
   }
 
   return {
@@ -45,6 +45,27 @@ export default () => {
       },
       package: androidPackage,
       permissions: ['android.permission.NFC'],
+      intentFilters: [
+        // Android App Links (HTTPS)
+        {
+          action: 'VIEW',
+          autoVerify: true,
+          data: {
+            scheme:'https',
+            host: 'skripsi.qorthony.my.id',
+            pathPrefix: '/link',
+          },
+          category: ['BROWSABLE', 'DEFAULT'],
+        },
+        // Standard Deep Links (Custom Scheme)
+        {
+          action: 'VIEW',
+          data: {
+            scheme: scheme,
+          },
+          category: ['BROWSABLE', 'DEFAULT'],
+        },
+      ],
     },
     web: {
       bundler: 'metro',
