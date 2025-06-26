@@ -47,7 +47,7 @@ export default function HomeScreen() {
                 </Text>
               )}
             </View>
-            <Text className='font-bold text-lg'>{user?.organizer?.nama || user?.name || 'Organizer'}</Text>
+            <Text className='font-bold text-lg'>{user?.organizer?.nama || user?.name || '-'}</Text>
           </View>
           <Text
             onPress={signOut}

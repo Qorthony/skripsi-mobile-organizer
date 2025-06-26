@@ -4,13 +4,18 @@ import { useLocalSearchParams, router } from 'expo-router';
 import BackendRequest from '@/services/Request';
 import { Button, ButtonText } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
+import { useSession } from '@/hooks/auth/ctx';
 
 export default function GateKeeperAccess() {
+  const { signIn, user, setUser } = useSession();
   const { id } = useLocalSearchParams();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
+  console.log('GateKeeperAccess mounted with id:', id);
+  
   useEffect(() => {
+    
     if (!id) return;
     setLoading(true);
     setError('');
@@ -18,14 +23,24 @@ export default function GateKeeperAccess() {
       endpoint: '/gate-keeper/access',
       method: 'POST',
       body: { kode_akses: id },
-      onSuccess: () => {
+      onSuccess: (data) => {
         setLoading(false);
+        console.log('Access granted successfully');
+        signIn(data.token || null);
+        setUser(data.gate_keeper);
+        router.replace('/');
+        
         // TODO: handle success (misal: redirect, show info, dsb)
       },
       onError: (err) => {
         setLoading(false);
+        console.log('GateKeeperAccess request failed:', err);
+        
         setError('Akses gagal. Kode akses tidak valid atau sudah digunakan.');
       },
+      onComplete: () => {
+        console.log('GateKeeperAccess request completed');
+      }
     });
   }, [id]);
 

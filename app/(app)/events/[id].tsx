@@ -20,7 +20,7 @@ type selectedTicket = {
 
 export default function DetailEvent() {
     const { id } = useLocalSearchParams();
-    const { session } = useSession();
+    const { session, user } = useSession();
     const [eventDetail, setEventDetail] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const [tab, setTab] = useState<'deskripsi'|'tiket'>('deskripsi');
@@ -105,9 +105,12 @@ export default function DetailEvent() {
                         <Button size='md' onPress={() => router.push(`/events/${id}/scan`)}>
                             <ButtonText>Pindai Tiket</ButtonText>
                         </Button>
-                        <Button size='md' variant='outline' onPress={() => router.push(`/events/${id}/transactions`)}>
-                            <ButtonText>Transaksi</ButtonText>
-                        </Button>
+                        {
+                            user?.organizer && (
+                            <Button size='md' variant='outline' onPress={() => router.push(`/events/${id}/transactions`)}>
+                                <ButtonText>Transaksi</ButtonText>
+                            </Button>)
+                        }
                     </HStack>
                 </AbsoluteBottomView>
             </View>
